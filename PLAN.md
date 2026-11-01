@@ -13,14 +13,15 @@
 |---|---|
 | שפה | Python 3.13 (הפקודה במחשב: `py`) |
 | ספריית RAG | LlamaIndex |
-| מודל שפה (LLM) | Gemini, מסלול חינמי, מודל Flash. השם המדויק ייקבע בשלב 1 לפי רשימת המודלים הזמינים |
-| מודל Embeddings | Gemini. השם המדויק ייקבע בשלב 1 |
+| מודל שפה (LLM) | Gemini, מסלול חינמי: `gemini-3.6-flash` (נבחר בשלב 1 לפי בדיקת זמינות) |
+| מודל Embeddings | Gemini: `gemini-embedding-2` (נבחר בשלב 1) |
 | Vector Store | Chroma, שמור בדיסק בתיקייה `chroma_db` |
 | ממשק | Streamlit |
 | מפתח API | בקובץ `.env` בשם `GOOGLE_API_KEY`, נקרא עם `python-dotenv` |
 | סביבה | venv בתיקייה `.venv` |
 
-חבילות: `llama-index-core`, `llama-index-llms-google-genai`, `llama-index-embeddings-google-genai`, `llama-index-vector-stores-chroma`, `chromadb`, `streamlit`, `python-dotenv`, `requests`.
+חבילות: `llama-index-core`, `llama-index-llms-google-genai`, `llama-index-embeddings-google-genai`, `llama-index-vector-stores-chroma`, `chromadb`, `streamlit`, `python-dotenv`, `requests`, `truststore`.
+`truststore` - בדיקת תעודות SSL דרך מאגר התעודות של Windows. נדרש כי סינון האינטרנט (NetFree) מחליף תעודות, ו-Python 3.13 דוחה אותן. מופעל בתחילת כל קובץ שמתחבר לאינטרנט.
 גרסאות מדויקות יקובעו ב-`requirements.txt` אחרי ההתקנה הראשונה שעובדת.
 
 ## מבנה הקבצים (סופי)
