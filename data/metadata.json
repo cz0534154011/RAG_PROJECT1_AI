@@ -1,0 +1,98 @@
+{
+  "01_about_the_site.txt": {
+    "document_id": "doc_01",
+    "title": "אודות האתר",
+    "topic": "general",
+    "audience": "all",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "02_roles_and_permissions.txt": {
+    "document_id": "doc_02",
+    "title": "תפקידים והרשאות",
+    "topic": "permissions",
+    "audience": "all",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "03_search_and_apartment_page.txt": {
+    "document_id": "doc_03",
+    "title": "חיפוש דירות ודף פרטי דירה",
+    "topic": "search",
+    "audience": "all",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "04_registration_and_login.txt": {
+    "document_id": "doc_04",
+    "title": "הרשמה, התחברות, תקנון וצור קשר",
+    "topic": "account",
+    "audience": "all",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "05_my_apartment.txt": {
+    "document_id": "doc_05",
+    "title": "פרסום וניהול הדירה שלי",
+    "topic": "apartment",
+    "audience": "user",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "06_swap_offers.txt": {
+    "document_id": "doc_06",
+    "title": "שליחת הצעת החלפה וההחלפות שלי",
+    "topic": "swap",
+    "audience": "user",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "07_swap_approval_and_cancellation.txt": {
+    "document_id": "doc_07",
+    "title": "אישור, משיכה וביטול של החלפה",
+    "topic": "swap",
+    "audience": "user",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "08_availability_calendar.txt": {
+    "document_id": "doc_08",
+    "title": "לוח התפוסה",
+    "topic": "calendar",
+    "audience": "user",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "09_profile.txt": {
+    "document_id": "doc_09",
+    "title": "עדכון פרופיל",
+    "topic": "account",
+    "audience": "user",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "10_admin_screens.txt": {
+    "document_id": "doc_10",
+    "title": "מסכי מנהל",
+    "topic": "admin",
+    "audience": "admin",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "11_terms_of_use.txt": {
+    "document_id": "doc_11",
+    "title": "תקנון השימוש באתר",
+    "topic": "terms",
+    "audience": "all",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  },
+  "12_system_behavior.txt": {
+    "document_id": "doc_12",
+    "title": "התנהגות כללית של האתר",
+    "topic": "general",
+    "audience": "all",
+    "version": "1.0",
+    "updated_at": "2026-11-01"
+  }
+}
