@@ -48,7 +48,17 @@ def show_sources(sources):
             st.caption(source["snippet"] + "...")
 
 
-# היסטוריית הצ'אט - לתצוגה בלבד, לא נשלחת למודל. נפרדת לכל לשונית
+def get_history():
+    """זוגות (שאלה, תשובה) מההיסטוריה שעל המסך, כהקשר לשאלות המשך."""
+    messages = st.session_state.messages
+    return [
+        (prev["content"], curr["content"])
+        for prev, curr in zip(messages, messages[1:])
+        if prev["role"] == "user" and curr["role"] == "assistant"
+    ]
+
+
+# היסטוריית הצ'אט. נפרדת לכל לשונית
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -58,8 +68,10 @@ for message in st.session_state.messages:
         if message.get("sources"):
             show_sources(message["sources"])
 
-# שאלה חדשה: נשלחת לבד, בלי השאלות הקודמות
+# שאלה חדשה: נשלחת עם השאלות והתשובות הקודמות כהקשר
 if question := st.chat_input("כתבו שאלה על האתר..."):
+    # ההיסטוריה נלקחת לפני הוספת השאלה החדשה
+    history = get_history()
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
         st.markdown(question)
@@ -67,7 +79,7 @@ if question := st.chat_input("כתבו שאלה על האתר..."):
     with st.chat_message("assistant"):
         with st.spinner("מחפש תשובה..."):
             # עד שלב ההתחברות - כולם אורחים
-            response, sources = rag.answer(question, "GUEST")
+            response, sources = rag.answer(question, "GUEST", history)
         st.markdown(response)
         if sources:
             show_sources(sources)

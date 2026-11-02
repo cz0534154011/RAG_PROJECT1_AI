@@ -14,7 +14,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 import config
 from ingest import get_embed_model
 
-# הנחיות למודל. {context} - המקטעים שנשלפו, {question} - השאלה
+# הנחיות למודל. {history} - השיחה הקודמת, {context} - המקטעים שנשלפו, {question} - השאלה
 PROMPT_TEMPLATE = """אתה עוזר של אתר "דירה לדירה" להחלפת דירות לשבתות ולחופשות.
 תפקידך לענות על שאלות על האתר, רק על סמך קטעי המידע שלמטה.
 
@@ -26,12 +26,28 @@ PROMPT_TEMPLATE = """אתה עוזר של אתר "דירה לדירה" להחל�
 5. אל תמסור מידע על אנשים אחרים.
 6. אם השאלה לא קשורה לאתר, או שהתשובה לא נמצאת בקטעים, החזר בדיוק את ההודעה הבאה ושום דבר מלבדה:
 {no_info}
+7. השיחה הקודמת נועדה רק כדי להבין למה השאלה מתייחסת. את התשובה עצמה בסס רק על קטעי המידע.
+
+שיחה קודמת:
+{history}
 
 קטעי המידע:
 {context}
 
 שאלה: {question}
 תשובה:"""
+
+# ניסוח מחדש של שאלת המשך כשאלה עצמאית, לפני החיפוש
+REWRITE_TEMPLATE = """לפניך שיחה קודמת ושאלה חדשה על אתר "דירה לדירה".
+נסח את השאלה החדשה מחדש כשאלה עצמאית ושלמה בעברית, שאפשר להבין בלי השיחה הקודמת.
+אם השאלה החדשה כבר מובנת לבד, או שהיא עוסקת בנושא אחר מהשיחה הקודמת, החזר אותה כמו שהיא.
+החזר רק את השאלה, בלי הסברים.
+
+שיחה קודמת:
+{history}
+
+שאלה חדשה: {question}
+שאלה עצמאית:"""
 
 
 def get_index(method=config.CHUNK_METHOD):
@@ -56,18 +72,39 @@ def retrieve(index, question, role):
 SNIPPET_LENGTH = 150
 
 
-def answer(question, role, method=config.CHUNK_METHOD):
-    """תשובה לשאלה בודדת (בלי זיכרון), ורשימת המקורות שנשלפו."""
-    nodes = retrieve(get_index(method), question, role)
+def format_history(history):
+    """היסטוריה כטקסט: זוגות של (שאלה, תשובה), מהישן לחדש."""
+    return "\n\n".join(f"שאלה: {q}\nתשובה: {a}" for q, a in history)
+
+
+def rewrite_question(llm, question, history):
+    """ניסוח שאלת המשך כשאלה עצמאית. בלי היסטוריה - השאלה חוזרת כמו שהיא."""
+    if not history:
+        return question
+    prompt = REWRITE_TEMPLATE.format(history=format_history(history), question=question)
+    return llm.complete(prompt).text.strip()
+
+
+def answer(question, role, history=None, method=config.CHUNK_METHOD):
+    """תשובה לשאלה ורשימת המקורות שנשלפו.
+    history - רשימת זוגות (שאלה, תשובה) קודמים; נלקחים רק HISTORY_TURNS האחרונים."""
+    history = (history or [])[-config.HISTORY_TURNS:] if config.HISTORY_TURNS else []
+    llm = GoogleGenAI(model=config.LLM_MODEL, api_key=config.GOOGLE_API_KEY)
+
+    # החיפוש נעשה על השאלה המנוסחת, כדי ששאלת המשך תמצא את המקטעים הנכונים
+    search_question = rewrite_question(llm, question, history)
+    nodes = retrieve(get_index(method), search_question, role)
     if not nodes:
         return config.NO_INFO_MESSAGE, []
 
     # כל מקטע עם שם המסמך שלו, כדי שהמודל יבין את ההקשר
     context = "\n\n".join(f"[{n.metadata['title']}]\n{n.text}" for n in nodes)
     prompt = PROMPT_TEMPLATE.format(
-        no_info=config.NO_INFO_MESSAGE, context=context, question=question
+        no_info=config.NO_INFO_MESSAGE,
+        history=format_history(history) or "אין",
+        context=context,
+        question=question,
     )
-    llm = GoogleGenAI(model=config.LLM_MODEL, api_key=config.GOOGLE_API_KEY)
     response = llm.complete(prompt).text.strip()
 
     sources = [
