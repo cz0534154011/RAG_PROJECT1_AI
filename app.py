@@ -7,8 +7,10 @@ import truststore
 truststore.inject_into_ssl()
 
 import chromadb
+import httpx
 import requests
 import streamlit as st
+from google.genai import errors as genai_errors
 
 import config
 import ingest
@@ -147,10 +149,18 @@ if question := st.chat_input("כתבו שאלה על האתר..."):
             # התפקיד קובע אילו מסמכים ייכללו בחיפוש. בלי התחברות - אורח
             user = st.session_state.user
             role = user["role"] if user else "GUEST"
-            response, sources = rag.answer(question, role, history)
-        st.markdown(response)
-        if sources:
-            show_sources(sources)
-    st.session_state.messages.append(
-        {"role": "assistant", "content": response, "sources": sources}
-    )
+            try:
+                response, sources = rag.answer(question, role, history)
+            except (genai_errors.APIError, httpx.HTTPError):
+                # Gemini לא זמין, עמוס או שהמכסה נגמרה
+                response = None
+        if response is None:
+            # ההודעה לא נשמרת בהיסטוריה, כדי שלא תישלח למודל כהקשר
+            st.error(config.AI_UNAVAILABLE_MESSAGE)
+        else:
+            st.markdown(response)
+            if sources:
+                show_sources(sources)
+            st.session_state.messages.append(
+                {"role": "assistant", "content": response, "sources": sources}
+            )
