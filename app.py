@@ -1,12 +1,45 @@
 # ממשק Streamlit: צ'אט על אתר "דירה לדירה".
 # הרצה: streamlit run app.py
 
+import truststore
+
+# בדיקת תעודות SSL דרך Windows (נדרש בגלל סינון NetFree)
+truststore.inject_into_ssl()
+
 import chromadb
+import requests
 import streamlit as st
 
 import config
 import ingest
 import rag
+
+
+def login(email, password):
+    """התחברות דרך השרת של האתר.
+    מחזיר (משתמש, None) בהצלחה, או (None, הודעת שגיאה) בכישלון."""
+    try:
+        response = requests.post(
+            config.LOGIN_URL,
+            json={"email": email, "password": password},
+            timeout=config.LOGIN_TIMEOUT,
+        )
+    except requests.RequestException:
+        # השרת לא זמין או לא ענה בזמן
+        return None, config.SERVER_UNAVAILABLE_MESSAGE
+
+    if response.status_code == 200:
+        # שומרים רק תפקיד ושם - לא טוקן, טלפון או מייל
+        user = response.json()["user"]
+        return {"role": user["role"], "full_name": user["fullName"]}, None
+    if response.status_code in (400, 401):
+        # הודעת השגיאה של השרת, בעברית
+        try:
+            return None, response.json()["error"]["message"]
+        except (ValueError, KeyError, TypeError):
+            return None, config.SERVER_UNAVAILABLE_MESSAGE
+    return None, config.SERVER_UNAVAILABLE_MESSAGE
+
 
 st.set_page_config(page_title="דירה לדירה - עוזר", page_icon="🏠")
 
@@ -14,7 +47,7 @@ st.set_page_config(page_title="דירה לדירה - עוזר", page_icon="🏠"
 st.markdown(
     """
     <style>
-    .stApp, .stChatMessage, .stChatInput, .stExpander {
+    .stApp, .stSidebar, .stChatMessage, .stChatInput, .stExpander {
         direction: rtl;
         text-align: right;
     }
@@ -38,6 +71,39 @@ def ensure_index():
 
 
 ensure_index()
+
+# המשתמש המחובר: None - אורח
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+# טופס התחברות בסרגל הצד, רק כשההתחברות פעילה ואין משתמש מחובר
+if config.AUTH_ENABLED and st.session_state.user is None:
+    with st.sidebar:
+        st.subheader("התחברות")
+        with st.form("login_form"):
+            email = st.text_input("מייל")
+            password = st.text_input("סיסמה", type="password")
+            submitted = st.form_submit_button("התחברות")
+        if submitted:
+            with st.spinner("מתחבר... (אם השרת לא היה פעיל, זה עשוי לקחת עד דקה)"):
+                user, error = login(email, password)
+            if user:
+                st.session_state.user = user
+                # בכל התחברות - ההיסטוריה נמחקת
+                st.session_state.messages = []
+                st.rerun()
+            else:
+                st.error(error)
+
+# משתמש מחובר: ברכה וכפתור התנתקות
+if st.session_state.user is not None:
+    with st.sidebar:
+        st.subheader(f"שלום, {st.session_state.user['full_name']}")
+        if st.button("התנתקות"):
+            st.session_state.user = None
+            # בכל התנתקות - ההיסטוריה נמחקת
+            st.session_state.messages = []
+            st.rerun()
 
 
 def show_sources(sources):
@@ -78,8 +144,10 @@ if question := st.chat_input("כתבו שאלה על האתר..."):
 
     with st.chat_message("assistant"):
         with st.spinner("מחפש תשובה..."):
-            # עד שלב ההתחברות - כולם אורחים
-            response, sources = rag.answer(question, "GUEST", history)
+            # התפקיד קובע אילו מסמכים ייכללו בחיפוש. בלי התחברות - אורח
+            user = st.session_state.user
+            role = user["role"] if user else "GUEST"
+            response, sources = rag.answer(question, role, history)
         st.markdown(response)
         if sources:
             show_sources(sources)
