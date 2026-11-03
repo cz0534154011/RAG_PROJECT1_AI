@@ -17,7 +17,7 @@ CHROMA_DIR = BASE_DIR / "chroma_db"
 load_dotenv(BASE_DIR / ".env")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-LLM_MODEL = "gemini-3.6-flash"
+LLM_MODEL = "gemini-3.5-flash-lite"
 EMBED_MODEL = "gemini-embedding-2"
 
 # --- חלוקה למקטעים ו-Chroma ---
@@ -45,13 +45,20 @@ AUDIENCE_BY_ROLE = {
     "ADMIN": ["all", "user", "admin"], # מנהל
 }
 
+# שם התפקיד בפרומפט, כדי שהמודל יידע מי שואל
+ROLE_LABELS = {
+    "GUEST": "אורח",
+    "USER": "משתמש רשום",
+    "ADMIN": "מנהל האתר",
+}
+
 # --- זיכרון קצר ---
 # כמה שאלות ותשובות אחרונות נשלחות למודל כהקשר
 HISTORY_TURNS = 3
 
 # --- תשובה ---
 # ההודעה המדויקת כשאין מידע במאגר
-NO_INFO_MESSAGE = "לא נמצא מידע על כך במאגר של האתר. ניתן לפנות למנהל האתר דרך דף 'צור קשר'."
+NO_INFO_MESSAGE = "לא נמצא מידע עבור תשובה לשאלה זו. אפשר לנסות לשאול שוב בצורה ממוקדת יותר, או לפנות למנהל האתר דרך דף 'צור קשר'."
 # כש-Gemini לא זמין, עמוס או שהמכסה נגמרה
 AI_UNAVAILABLE_MESSAGE = "השירות עמוס כרגע או שהגיע למכסת השימוש. ניתן לנסות שוב בעוד כמה דקות."
 

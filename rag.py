@@ -28,6 +28,8 @@ PROMPT_TEMPLATE = """אתה עוזר של אתר "דירה לדירה" להחל�
 {no_info}
 7. השיחה הקודמת נועדה רק כדי להבין למה השאלה מתייחסת. את התשובה עצמה בסס רק על קטעי המידע.
 
+המשתמש ששואל: {user_role}. כל קטעי המידע שלמטה מותרים לו.
+
 שיחה קודמת:
 {history}
 
@@ -91,7 +93,7 @@ def answer(question, role, history=None, method=config.CHUNK_METHOD):
     history = (history or [])[-config.HISTORY_TURNS:] if config.HISTORY_TURNS else []
     llm = GoogleGenAI(model=config.LLM_MODEL, api_key=config.GOOGLE_API_KEY)
 
-    # החיפוש נעשה על השאלה המנוסחת, כדי ששאלת המשך תמצא את המקטעים הנכונים
+    # החיפוש והתשובה מקבלים את השאלה המנוסחת, כדי ששאלת המשך תהיה ברורה לשניהם
     search_question = rewrite_question(llm, question, history)
     nodes = retrieve(get_index(method), search_question, role)
     if not nodes:
@@ -101,9 +103,10 @@ def answer(question, role, history=None, method=config.CHUNK_METHOD):
     context = "\n\n".join(f"[{n.metadata['title']}]\n{n.text}" for n in nodes)
     prompt = PROMPT_TEMPLATE.format(
         no_info=config.NO_INFO_MESSAGE,
+        user_role=config.ROLE_LABELS[role],
         history=format_history(history) or "אין",
         context=context,
-        question=question,
+        question=search_question,
     )
     response = llm.complete(prompt).text.strip()
 
